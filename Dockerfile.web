@@ -1,0 +1,44 @@
+# Use an official Python runtime as a parent image
+FROM python:3.13.0b1-slim
+
+# Set the working directory in the container
+WORKDIR /usr/src/app
+
+# Install Git, necessary libraries, and system utilities
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    python3-dev \
+    musl-dev \
+    git \
+    build-essential \
+    clang \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN pip install --upgrade pip setuptools
+
+# Install Gunicorn
+RUN pip install gunicorn 
+
+# Clone the specific Git repositories
+RUN git clone https://github.com/yourusername/filmfluency.git
+RUN git clone https://github.com/yourusername/filmfluency-game.git
+
+# Install any needed packages specified in requirements.txt
+COPY filmfluency/requirements.txt .
+RUN pip install -r requirements.txt
+
+# Expose port 8000 to the outside once the container has launched
+EXPOSE 8000
+
+# Copy the entrypoint script into the container
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# cd into the Django project directory
+WORKDIR /usr/src/app/filmfluency
+
+# Define the entrypoint and command to run your Django application using Gunicorn
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["web"]
